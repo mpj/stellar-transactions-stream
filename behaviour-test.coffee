@@ -79,20 +79,36 @@ it 'hej3', (done) ->
   ledgerListener = (ledger_data) ->
     #console.log("ledger is", ledger_data)
 
-it.only 'hej4', ->
+it.only 'hej4', (done)->
+  this.timeout(200000);
   WebSocket = require('ws')
-  ws = new WebSocket('ws://live.stellar.org:9001');
-  ws.on 'open',  ->
-    console.log("oepned!")
-    ws.send(JSON.stringify({ "command" : "subscribe",   "accounts" : [ "gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q" ] }));
+  console.log("1")
+  try
+    ws = new WebSocket('ws://live.stellar.org:9001');
+  catch error
+    console.log 'error caught on construction', error
+  console.log("2")
+  try
+    console.log("3")
+    ws.on 'open',  ->
+      console.log("oepned!")
+      cb = ->
+        console.log("cb", arguments)
+      try
+        ws.send(JSON.stringify({ "command" : "subscribe",   "accounts" : [ "asd7yasbysdgh" ] }), cb)
+      catch error
+        console.log("rror caught", error)
 
-    ws.on 'message', (message) ->
-      console.log 'message type', typeof(message)
-      console.log('received: %s', message);
+      ws.on 'message', (message) ->
+        console.log 'message type', typeof(message)
+        console.log('received: %s', message);
 
     ws.on 'error', (message) ->
-        console.log('error: %s', message);
-
+      console.log("args", arguments)
+      console.log('error: %s', message);
+    console.log("4")
+  catch error
+    console.log 'error caught on open', error
 it 'hej2', (done)->
     opts =
       "method": "account_tx"

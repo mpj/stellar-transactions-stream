@@ -8,57 +8,33 @@ describe 'account-stream', ->
 
   beforeEach ->
     clock = sinon.useFakeTimers()
-    world =
-      given:
-        fakeWebSocketConstructor: ->
-          world.fakeWebSocketInstance =
-            handlers: {}
-            on: sinon.spy (event, callback) ->
-              this.handlers[event] = callback
-            fakeEmit: (event, obj) ->
-              this.handlers[event](obj)
-            send: sinon.stub()
-
-          world.fakeWebSocketConstructor =
-            sinon.stub().returns(world.fakeWebSocketInstance)
-          world.given
-
-        testSubjectCalledWithSomeAccount: ->
-          world.someAccount = 'gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q'
-          world.returnedStream =
-            accountStream(world.fakeWebSocketConstructor, world.someAccount)
-          world.given
-
-        socketOpensSuccessFully: ->
-          world.fakeWebSocketInstance.fakeEmit 'open'
-          world.given
-
-        sendCommandYieldsSuccessfully: ->
-          world.fakeWebSocketInstance.send.yield null
-          world.given
-
-        fakeErrorHandler: ->
-          world.fakeErrorHandler = sinon.spy()
-          world.returnedStream.on 'error', world.fakeErrorHandler
-          world.given
-
-        fakeDataHandler: ->
-          world.fakeDataHandler = sinon.spy()
-          world.returnedStream.on 'data', world.fakeDataHandler
-          world.given
-
-    world.when = world.given
-
+    world = {}
 
   afterEach -> clock.restore()
 
   describe 'given test subject is called with a web socket constructor', ->
     beforeEach ->
-      world.given
-        .fakeWebSocketConstructor()
-        .testSubjectCalledWithSomeAccount()
-        .fakeErrorHandler()
-        .fakeDataHandler()
+      world.fakeWebSocketInstance =
+        handlers: {}
+        on: sinon.spy (event, callback) ->
+          this.handlers[event] = callback
+        fakeEmit: (event, obj) ->
+          this.handlers[event](obj)
+        send: sinon.stub()
+
+      world.fakeWebSocketConstructor =
+        sinon.stub().returns(world.fakeWebSocketInstance)
+
+      world.someAccount = 'gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q'
+      world.returnedStream =
+        accountStream(world.fakeWebSocketConstructor, world.someAccount)
+
+      world.fakeErrorHandler = sinon.spy()
+      world.returnedStream.on 'error', world.fakeErrorHandler
+
+      world.fakeDataHandler = sinon.spy()
+      world.returnedStream.on 'data', world.fakeDataHandler
+
 
     it 'constructs a stream', () ->
       assert(world.fakeWebSocketConstructor.calledWithNew())
@@ -75,7 +51,7 @@ describe 'account-stream', ->
 
     describe 'given socket has been opened', ->
       beforeEach ->
-        world.given.socketOpensSuccessFully()
+        world.fakeWebSocketInstance.fakeEmit 'open'
 
       it 'then it sends a subscription command', () ->
         clock.tick 1
@@ -90,7 +66,7 @@ describe 'account-stream', ->
 
       describe 'given subscription is successful', ->
         beforeEach ->
-          world.given.sendCommandYieldsSuccessfully()
+          world.fakeWebSocketInstance.send.yield null
 
         it 'then it does NOT send error', ->
           assert world.fakeErrorHandler.callCount is 0
