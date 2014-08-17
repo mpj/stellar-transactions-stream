@@ -1,7 +1,7 @@
 {
-  "name": "stellar-transactions-stream",
+  "name": "stellar-account-stream",
   "version": "1.0.0",
-  "description": "stellar-transactions-stream ===========================",
+  "description": "stellar-account-stream ===========================",
   "main": "index.js",
   "scripts": {
     "test": "mocha"
