@@ -11,6 +11,9 @@ module.exports = (WebSocket, account) ->
       stream.emit('error', error) if error
       ws.on 'message', (messageString) ->
         messageObject = JSON.parse messageString
+        if messageObject.status is 'error'
+          stream.emit('error', messageObject)
+          return
         stream.write
           from: messageObject.transaction.Account
           to: messageObject.transaction.Destination

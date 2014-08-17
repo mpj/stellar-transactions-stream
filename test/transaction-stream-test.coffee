@@ -115,6 +115,17 @@ describe 'transaction-stream', ->
               date: 461599670
               amount: 50000000
 
+        describe 'given websocket sends an error response', ->
+          fakeError = null
+          beforeEach ->
+            fakeError =
+              "status":"error"
+              "more_props": "here"
+            world.fakeWebSocketInstance.fakeEmit 'message', JSON.stringify fakeError
+
+          it 'then it will be passed to error handler', ->
+            assert(world.fakeErrorHandler.calledWith(fakeError))
+
       describe 'given subscription fails', ->
         fakeError = null
         beforeEach ->
