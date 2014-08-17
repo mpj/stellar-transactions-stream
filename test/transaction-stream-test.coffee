@@ -34,7 +34,7 @@ describe 'transaction-stream', ->
   it 'subscribes to account and streams it', (done) ->
     world.given.fakeWebSocketConstructor()
 
-    testSubject = transactionStream(world.fakeWebSocketConstructor, 'gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q')
+    stream = transactionStream(world.fakeWebSocketConstructor, 'gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q')
 
     assert(world.fakeWebSocketConstructor.calledWithNew())
     assert(world.fakeWebSocketConstructor.calledWith('ws://live.stellar.org:9001'))
@@ -45,14 +45,14 @@ describe 'transaction-stream', ->
 
     clock.tick 100
 
-    testSubject.on 'error', -> assert.fail('should not call error')
+    stream.on 'error', -> assert.fail('should not call error')
 
     world.fakeWebSocketInstance.send.yield null
 
     assert(world.fakeWebSocketInstance.send.calledWith(
       JSON.stringify({ "command" : "subscribe",   "accounts" : [ "gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q" ] })))
 
-    testSubject.on 'data', (data) ->
+    stream.on 'data', (data) ->
       assert.deepEqual data,
         from: "gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q"
         to: "gM8ZuCaGB7GkCiLz7rW941boyVT2vW1ppT"
@@ -75,13 +75,13 @@ describe 'transaction-stream', ->
   it 'forwards errors from on error', (done) ->
     world.given.fakeWebSocketConstructor()
 
-    testSubject = transactionStream(world.fakeWebSocketConstructor, 'gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q')
+    stream = transactionStream(world.fakeWebSocketConstructor, 'gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q')
 
     clock.tick 50
 
     fakeError = new Error()
 
-    testSubject.on 'error', (error) ->
+    stream.on 'error', (error) ->
       assert.equal fakeError, error
       done()
 
@@ -91,14 +91,14 @@ describe 'transaction-stream', ->
 
     world.given.fakeWebSocketConstructor()
 
-    testSubject = transactionStream(world.fakeWebSocketConstructor, 'gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q')
+    stream = transactionStream(world.fakeWebSocketConstructor, 'gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q')
 
     clock.tick 50
 
     world.fakeWebSocketInstance.fakeEmit 'open'
 
     fakeError = new Error()
-    testSubject.on 'error', (error) ->
+    stream.on 'error', (error) ->
       assert.equal fakeError, error
       done()
 
