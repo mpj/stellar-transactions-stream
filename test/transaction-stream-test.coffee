@@ -95,25 +95,23 @@ describe 'transaction-stream', ->
         it 'then it does NOT send error', ->
           assert world.fakeErrorHandler.callCount is 0
 
-        describe 'given websocket sends data', ->
+        describe 'given websocket sends a transaction', ->
+          transaction = null
           beforeEach ->
-            world.fakeWebSocketInstance.fakeEmit 'message', JSON.stringify({
-               "transaction":{
-                  "Account":"gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q",
-                  "Amount":"50000000",
-                  "Destination":"gM8ZuCaGB7GkCiLz7rW941boyVT2vW1ppT",
-                  "TransactionType":"Payment",
-                  "date":461599670,
-                  "hash":"4FE01B5CB153EFC5825DB0BDDD8A4764D63FC55102E25277548A85B2B6277202"
-               }
-            })
+            transaction =
+             "other_prop": "hej"
+             "transaction":{
+                "Account":"gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q",
+                "Amount":"50000000",
+                "Destination":"gM8ZuCaGB7GkCiLz7rW941boyVT2vW1ppT",
+                "TransactionType":"Payment",
+                "date":461599670,
+                "hash":"4FE01B5CB153EFC5825DB0BDDD8A4764D63FC55102E25277548A85B2B6277202"
+             }
+            world.fakeWebSocketInstance.fakeEmit 'message', JSON.stringify transaction
 
-          it 'then it sends simplified transaction', ->
-            assert world.fakeDataHandler.calledWith
-              from: "gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q"
-              to: "gM8ZuCaGB7GkCiLz7rW941boyVT2vW1ppT"
-              date: 461599670
-              amount: 50000000
+          it 'then it streams the transaction', ->
+            assert world.fakeDataHandler.calledWith transaction
 
         describe 'given websocket sends an error response', ->
           fakeError = null
