@@ -9,13 +9,13 @@ module.exports = (WebSocket, account) ->
       "accounts" : [ account ]
     ws.send payload, (error) ->
       stream.emit('error', error) if error
-    ws.on 'message', (messageString) ->
-      messageObject = JSON.parse messageString
-      stream.write
-        from: messageObject.transaction.Account
-        to: messageObject.transaction.Destination
-        amount: parseInt(messageObject.transaction.Amount)
-        date: messageObject.transaction.date
+      ws.on 'message', (messageString) ->
+        messageObject = JSON.parse messageString
+        stream.write
+          from: messageObject.transaction.Account
+          to: messageObject.transaction.Destination
+          amount: parseInt(messageObject.transaction.Amount)
+          date: messageObject.transaction.date
   ws.on 'error', (error) ->
     stream.emit('error', error)
   stream

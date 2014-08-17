@@ -2,10 +2,6 @@ transactionStream = require '../src/transaction-stream'
 sinon = require 'sinon'
 assert = require 'assert'
 
-# TODO: start listening *after* subscribing
-
-
-
 describe 'transaction-stream', ->
   world = null
   clock = null
@@ -88,6 +84,9 @@ describe 'transaction-stream', ->
           "accounts" : [ world.someAccount ]
 
         assert world.fakeWebSocketInstance.send.calledWith expectedPayload
+
+      it 'should NOT YET listen to messages', ->
+        assert not world.fakeWebSocketInstance.on.calledWith('message')
 
       describe 'given subscription is successful', ->
         beforeEach ->
