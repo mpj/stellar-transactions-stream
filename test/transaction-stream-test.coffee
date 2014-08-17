@@ -4,109 +4,102 @@ assert = require 'assert'
 
 # TODO: start listening *after* subscribing
 
-it 'subscribes to account and streams it', (done) ->
 
-  clock = sinon.useFakeTimers();
 
-  fakeWebSocketInstance =
-    handlers: {}
-    on: sinon.spy (event, callback) ->
-      this.handlers[event] = callback
-    fakeEmit: (event, obj) ->
-      this.handlers[event](obj)
-    send: sinon.stub()
-  fakeWebSocketConstructor = sinon.stub().returns(fakeWebSocketInstance)
+describe 'transaction-stream', ->
+  world = null
+  clock = null
 
-  testSubject = transactionStream(fakeWebSocketConstructor, 'gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q')
+  beforeEach ->
+    world =
+      given:
+        fakeWebSocketConstructor: ->
 
-  assert(fakeWebSocketConstructor.calledWithNew())
-  assert(fakeWebSocketConstructor.calledWith('ws://live.stellar.org:9001'))
+          world.fakeWebSocketInstance =
+            handlers: {}
+            on: sinon.spy (event, callback) ->
+              this.handlers[event] = callback
+            fakeEmit: (event, obj) ->
+              this.handlers[event](obj)
+            send: sinon.stub()
 
-  clock.tick 50
+          world.fakeWebSocketConstructor =
+            sinon.stub().returns(world.fakeWebSocketInstance)
+          world
 
-  fakeWebSocketInstance.fakeEmit 'open'
+    clock = sinon.useFakeTimers()
 
-  clock.tick 100
+  afterEach -> clock.restore()
 
-  testSubject.on 'error', -> assert.fail('should not call error')
+  it 'subscribes to account and streams it', (done) ->
+    world.given.fakeWebSocketConstructor()
 
-  fakeWebSocketInstance.send.yield null
+    testSubject = transactionStream(world.fakeWebSocketConstructor, 'gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q')
 
-  assert(fakeWebSocketInstance.send.calledWith(
-    JSON.stringify({ "command" : "subscribe",   "accounts" : [ "gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q" ] })))
+    assert(world.fakeWebSocketConstructor.calledWithNew())
+    assert(world.fakeWebSocketConstructor.calledWith('ws://live.stellar.org:9001'))
 
-  testSubject.on 'data', (data) ->
-    assert.deepEqual data,
-      from: "gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q"
-      to: "gM8ZuCaGB7GkCiLz7rW941boyVT2vW1ppT"
-      date: 461599670
-      amount: 50000000
-    done()
+    clock.tick 50
 
-  fakeWebSocketInstance.fakeEmit 'message', JSON.stringify({
-     "transaction":{
-        "Account":"gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q",
-        "Amount":"50000000",
-        "Destination":"gM8ZuCaGB7GkCiLz7rW941boyVT2vW1ppT",
-        "TransactionType":"Payment",
-        "date":461599670,
-        "hash":"4FE01B5CB153EFC5825DB0BDDD8A4764D63FC55102E25277548A85B2B6277202"
-     }
-  })
+    world.fakeWebSocketInstance.fakeEmit 'open'
 
-  clock.restore()
+    clock.tick 100
 
-it 'forwards errors from on error', (done)->
+    testSubject.on 'error', -> assert.fail('should not call error')
 
-  clock = sinon.useFakeTimers();
+    world.fakeWebSocketInstance.send.yield null
 
-  fakeWebSocketInstance =
-    handlers: {}
-    on: sinon.spy (event, callback) ->
-      this.handlers[event] = callback
-    fakeEmit: (event, obj) ->
-      this.handlers[event](obj)
-    send: sinon.stub()
-  fakeWebSocketConstructor = sinon.stub().returns(fakeWebSocketInstance)
+    assert(world.fakeWebSocketInstance.send.calledWith(
+      JSON.stringify({ "command" : "subscribe",   "accounts" : [ "gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q" ] })))
 
-  testSubject = transactionStream(fakeWebSocketConstructor, 'gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q')
+    testSubject.on 'data', (data) ->
+      assert.deepEqual data,
+        from: "gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q"
+        to: "gM8ZuCaGB7GkCiLz7rW941boyVT2vW1ppT"
+        date: 461599670
+        amount: 50000000
+      done()
 
-  clock.tick 50
+    world.fakeWebSocketInstance.fakeEmit 'message', JSON.stringify({
+       "transaction":{
+          "Account":"gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q",
+          "Amount":"50000000",
+          "Destination":"gM8ZuCaGB7GkCiLz7rW941boyVT2vW1ppT",
+          "TransactionType":"Payment",
+          "date":461599670,
+          "hash":"4FE01B5CB153EFC5825DB0BDDD8A4764D63FC55102E25277548A85B2B6277202"
+       }
+    })
 
-  fakeError = new Error()
 
-  testSubject.on 'error', (error) ->
-    assert.equal fakeError, error
-    done()
+  it 'forwards errors from on error', (done) ->
+    world.given.fakeWebSocketConstructor()
 
-  fakeWebSocketInstance.fakeEmit 'error', fakeError
+    testSubject = transactionStream(world.fakeWebSocketConstructor, 'gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q')
 
-  clock.restore()
+    clock.tick 50
 
-it 'forwards errors from send callback', (done) ->
+    fakeError = new Error()
 
-  clock = sinon.useFakeTimers();
+    testSubject.on 'error', (error) ->
+      assert.equal fakeError, error
+      done()
 
-  fakeWebSocketInstance =
-    handlers: {}
-    on: sinon.spy (event, callback) ->
-      this.handlers[event] = callback
-    fakeEmit: (event, obj) ->
-      this.handlers[event](obj)
-    send: sinon.stub()
-  fakeWebSocketConstructor = sinon.stub().returns(fakeWebSocketInstance)
+    world.fakeWebSocketInstance.fakeEmit 'error', fakeError
 
-  testSubject = transactionStream(fakeWebSocketConstructor, 'gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q')
+  it 'forwards errors from send callback', (done) ->
 
-  clock.tick 50
+    world.given.fakeWebSocketConstructor()
 
-  fakeWebSocketInstance.fakeEmit 'open'
+    testSubject = transactionStream(world.fakeWebSocketConstructor, 'gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q')
 
-  fakeError = new Error()
-  testSubject.on 'error', (error) ->
-    assert.equal fakeError, error
-    done()
+    clock.tick 50
 
-  fakeWebSocketInstance.send.yield fakeError
+    world.fakeWebSocketInstance.fakeEmit 'open'
 
-  clock.restore()
+    fakeError = new Error()
+    testSubject.on 'error', (error) ->
+      assert.equal fakeError, error
+      done()
+
+    world.fakeWebSocketInstance.send.yield fakeError
