@@ -15,5 +15,17 @@
   "bugs": {
     "url": "https://github.com/mpj/stellar-transactions-stream/issues"
   },
-  "homepage": "https://github.com/mpj/stellar-transactions-stream"
+  "homepage": "https://github.com/mpj/stellar-transactions-stream",
+  "devDependencies": {
+    "mocha": "^1.21.4"
+  },
+  "dependencies": {
+    "coffee-script": "^1.7.1",
+    "highland": "^1.27.1",
+    "mout": "^0.9.1",
+    "request": "^2.40.0",
+    "sinon": "^1.10.3",
+    "stellar-lib": "^0.9.2",
+    "ws": "^0.4.32"
+  }
 }
