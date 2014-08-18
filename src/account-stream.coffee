@@ -6,6 +6,7 @@ module.exports = (WebSocket, account) ->
   ws.on 'open', ->
     payload = JSON.stringify
       "command" : "subscribe"
+      "streams" :  [ "transactions" ]
       "accounts" : [ account ]
     ws.send payload, (error) ->
       stream.emit('error', error) if error

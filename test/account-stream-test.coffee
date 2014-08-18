@@ -57,6 +57,7 @@ describe 'account-stream', ->
         clock.tick 1
         expectedPayload = JSON.stringify
           "command" : "subscribe"
+          "streams" :  [ "transactions" ]
           "accounts" : [ world.someAccount ]
 
         assert world.fakeWebSocketInstance.send.calledWith expectedPayload
