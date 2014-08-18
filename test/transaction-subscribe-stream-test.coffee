@@ -1,4 +1,4 @@
-accountStream = require '../src/account-stream'
+transactionStream = require '../src/transaction-subscribe-stream'
 sinon = require 'sinon'
 assert = require 'assert'
 
@@ -27,7 +27,7 @@ describe 'account-stream', ->
 
       world.someAccount = 'gDSSa75HPagWcvQmwH7D51dT5DPmvsKL4q'
       world.returnedStream =
-        accountStream(world.fakeWebSocketConstructor, world.someAccount)
+        transactionStream(world.fakeWebSocketConstructor, world.someAccount)
 
       world.fakeErrorHandler = sinon.spy()
       world.returnedStream.on 'error', world.fakeErrorHandler
