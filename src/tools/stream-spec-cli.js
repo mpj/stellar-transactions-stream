@@ -4,8 +4,11 @@ var isFunction = require('mout/lang/isFunction');
 var crypto = require('crypto');
 var exec = require('child_process').exec
 var recursive = require('recursive-readdir');
+var uncache = require ('require-uncache') 
 
 require('coffee-script/register');
+
+var specifiedFile = process.argv[2];
 
  
 function runCommandLine(cmd, pipeOutputToConsole, callback) {
@@ -65,28 +68,44 @@ getHashOfDirectory('.', function() {
   var runSpecs = function () {
     console.log('Running...')
     
-    recursive('./', function (err, files) {
-      console.log('\033[2J'); // clear
-      var cleaned = files
-      .filter(function(file) {
-        return file.indexOf('spec.coffee') > -1 || file.indexOf('spec.js') > -1
-      })
-      .filter(function(file) {
-        var include = true;
-        ignoreDirectories.forEach(function(dir) {
-          if(file.indexOf(dir) === 0)
-            include = false;
-        })
-        return include;
-      })
-      
-      cleaned.forEach(function(file) {
-        var spec = require(process.cwd()+'/'+file)
+    if (specifiedFile) {
+      var path = process.cwd()+'/'+specifiedFile
+      try {
+        var spec = require(path)
         if (isFunction(spec.exec))
           spec.exec()
-      })
+      } catch(e) {
+        console.warn("Error:", e.stack)
+      }
+      uncache(path)
       
-    });
+      
+    } else {
+      recursive('./', function (err, files) {
+        console.log('\033[2J'); // clear
+        var cleaned = files
+        .filter(function(file) {
+          return file.indexOf('spec.coffee') > -1 || file.indexOf('spec.js') > -1
+        })
+        .filter(function(file) {
+          var include = true;
+          ignoreDirectories.forEach(function(dir) {
+            if(file.indexOf(dir) === 0)
+              include = false;
+          })
+          return include;
+        })
+        
+        cleaned.forEach(function(file) {
+          var path = process.cwd()+'/'+file
+          var spec = require(path)
+          if (isFunction(spec.exec))
+            spec.exec()
+          uncache(path)
+        })
+        
+      });
+    }
 
   }
   var onDirectoryChanged = debounce(runSpecs, 500)

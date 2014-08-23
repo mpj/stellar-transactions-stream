@@ -1,2 +1,7 @@
+es = require 'event-stream'
+request = require 'request'
 module.exports = ->
-  _.thorugh (s) -> s.flatMap (requestOptions) -> request(requestOptions)
+  es.map (requestOptions, callback) ->
+    request requestOptions, (error, response, body) -> callback error, body
+
+  

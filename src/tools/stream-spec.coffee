@@ -4,8 +4,11 @@ prettyjson =
   render: (x) -> 
     JSON.stringify x, null, 2
 deepMatches = require 'mout/object/deepMatches'
+deepEquals = require 'deep-equal'
+partial = require 'mout/function/partial'
 colors = require 'colors'
 isFunction = require 'mout/lang/isFunction'
+domain = require 'domain'
 
       
   ## TODO pass in map function to inspect
@@ -15,6 +18,10 @@ isFunction = require 'mout/lang/isFunction'
   # adder = transform (operators) ->
   #   operators.left + operators.right
   # (the above should also be able to return streams
+  # TODO USe more specific test directories and format and be
+  # more brittle - very annoying with silence when you forget
+  # a module exports
+  # TODO make inspect act like .only
 
 spec = (transformConstructor) ->
   if not isFunction(transformConstructor)
@@ -23,15 +30,32 @@ spec = (transformConstructor) ->
 
   simulate = (constructor, givenObj, callback) ->
 
-    transform = constructor()
-    faux = _()
-    x = faux.through(transform)
-    x.on 'data', _.partial(callback, null)
-    x.on 'error', callback
-    try
-      faux.write givenObj
-    catch err
+    failed = false
+    onError = (err) -> 
+      failed = true
       callback err
+    
+    env = domain.create();
+    env.on 'error', onError
+    
+    try
+      env.run ->
+        transform = constructor()
+        
+        input = _()
+        output = input.pipe(transform)
+        output.on 'data', (data) ->
+          if not failed
+            # has some problems with the through stream
+            # passing an error and then the input message,
+            # funky. Either way, we're not interested in 
+            # anything if there is an error happening.
+            callback null, data
+        input.write givenObj
+    catch err
+      onError err
+  
+
       
       
   printLog = (opts) ->
@@ -54,24 +78,33 @@ spec = (transformConstructor) ->
         
   onExec = []
   
+  
+  
   specHandle = 
     case: (description) ->
       description ||= 'Untitled case'
       given: (givenObj) ->
-        yields: (expectedObj) ->
+        yields = (comparator, expectedObj) -> 
           onExec.push ->
             simulate transformConstructor, givenObj, (error, yieldedObj) ->
-              if not deepMatches yieldedObj, expectedObj
+              if not comparator yieldedObj, expectedObj
                 console.log "* NOT FULFILLED: ".red + description
                 printLog { givenObj, yieldedObj, expectedObj, error }
               else
                 console.log "* FULFILLED: ".green + description
           specHandle
-        inspect: ->
+    
+        yields: partial yields, deepMatches
+        yieldsExactly: partial yields, deepEquals
+          
+        inspect: (yieldedObjectMapper) ->
+          yieldedObjectMapper ||= 
+            (obj) -> obj
           onExec.push ->
             simulate transformConstructor, givenObj, (error, yieldedObj) ->
               console.log "* INSPECTING: ".magenta + description
               console.log ''
+              yieldedObj = yieldedObjectMapper(yieldedObj)
               printLog { givenObj, yieldedObj, error }
           specHandle
     exec: -> onExec.forEach (fn) -> fn()
