@@ -1,7 +1,11 @@
-es = require 'event-stream'
+through = require 'through'
 request = require 'request'
 module.exports = ->
-  es.map (requestOptions, callback) ->
-    request requestOptions, (error, response, body) -> callback error, body
+  through (requestOptions) ->
+    self = this
+    request requestOptions, (error, response, body) -> 
+      if error
+        throw error
+      self.queue body
 
   

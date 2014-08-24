@@ -1,5 +1,4 @@
 assert = require 'assert'
-_ = require 'highland'
 prettyjson =
   render: (x) -> 
     JSON.stringify x, null, 2
@@ -41,17 +40,15 @@ spec = (transformConstructor) ->
     try
       env.run ->
         transform = constructor()
-        
-        input = _()
-        output = input.pipe(transform)
-        output.on 'data', (data) ->
+
+        transform.on 'data', (data) ->
           if not failed
             # has some problems with the through stream
             # passing an error and then the input message,
             # funky. Either way, we're not interested in 
             # anything if there is an error happening.
             callback null, data
-        input.write givenObj
+        transform.write givenObj
     catch err
       onError err
   
@@ -69,6 +66,7 @@ spec = (transformConstructor) ->
       console.log prettyjson.render expectedObj
       console.log ''
     if error
+      console.log 'error is ', error
       console.log "Yielded "+ "error".red + ":"
       console.log error.stack.red
     else
