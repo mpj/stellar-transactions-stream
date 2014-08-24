@@ -28,27 +28,44 @@ spec = (transformConstructor) ->
     return
 
   simulate = (constructor, givenObj, callback) ->
-
+  
     failed = false
+    passed = []    
+    timeoutHandle = null
+    
     onError = (err) -> 
+      clearTimeout timeoutHandle
       failed = true
-      callback err
+      callback err, null, passed
     
     env = domain.create();
     env.on 'error', onError
     
     try
       env.run ->
+        
         transform = constructor()
-
         transform.on 'data', (data) ->
           if not failed
+            clearTimeout timeoutHandle
             # has some problems with the through stream
             # passing an error and then the input message,
             # funky. Either way, we're not interested in 
             # anything if there is an error happening.
-            callback null, data
+            callback null, data, passed
+        
+        transform.on 'passed', (data) -> passed.push data
+        
+        doTimeout = ->
+          if not failed
+            failed = true
+            err = new Error 'Timed out'
+            callback err, null, passed
+        timeoutHandle = setTimeout doTimeout, 1000
+        
         transform.write givenObj
+        
+
     catch err
       onError err
   
@@ -56,19 +73,26 @@ spec = (transformConstructor) ->
       
       
   printLog = (opts) ->
-    { givenObj, expectedObj, yieldedObj, error } = opts
+    { givenObj, expectedObj, yieldedObj, passed, error } = opts
     console.log ''
     console.log "Given:"
     console.log prettyjson.render givenObj
     console.log ''
+    if passed
+      passed.forEach (data, i) ->
+        return if i is 0
+        console.log "Passed ("+i+"):"
+        console.log prettyjson.render data
+        console.log ''
+      
     if expectedObj
       console.log "Expected:"
       console.log prettyjson.render expectedObj
       console.log ''
     if error
-      console.log 'error is ', error
       console.log "Yielded "+ "error".red + ":"
-      console.log error.stack.red
+      message = error.stack or error.message 
+      console.log message.red
     else
       console.log "Yielded:"
       console.log prettyjson.render yieldedObj
@@ -99,11 +123,11 @@ spec = (transformConstructor) ->
           yieldedObjectMapper ||= 
             (obj) -> obj
           onExec.push ->
-            simulate transformConstructor, givenObj, (error, yieldedObj) ->
+            simulate transformConstructor, givenObj, (error, yieldedObj, passed) ->
               console.log "* INSPECTING: ".magenta + description
               console.log ''
               yieldedObj = yieldedObjectMapper(yieldedObj)
-              printLog { givenObj, yieldedObj, error }
+              printLog { givenObj, yieldedObj, passed, error }
           specHandle
     exec: -> onExec.forEach (fn) -> fn()
   specHandle

@@ -13,16 +13,27 @@ simpleTransactions = require './streams/simple-transactions'
 
 through = require 'through'
 
+fetchNameRequestOptions = -> through (account) ->
 
-subject = -> pipeline requestOptions(),
-                      request(),
-                      JSONStream.parse(),
-                      simpleTransactions()
+  this.queue
+    method: 'GET'
+    uri: 'https://api.stellar.org/reverseFederation?domain=stellar.org&destination_address=' + account
+
+
+federationRequest = -> pipeline fetchNameRequestOptions(), request(),
+            JSONStream.parse()
+
                          
-module.exports = spec(subject)
+module.exports = spec(federationRequest)
   .case()
-  .given(account)
+  .given 'gEAZjCR4PUK8dyJAyjEry54pN2UqJKAB16'
   .inspect()
   
   
   
+
+idToSimpleTransactions = -> 
+  pipeline  requestOptions(),
+            request(),
+            JSONStream.parse(),
+            simpleTransactions()
