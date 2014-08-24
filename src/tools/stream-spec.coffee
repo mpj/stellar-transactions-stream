@@ -10,7 +10,6 @@ isFunction = require 'mout/lang/isFunction'
 domain = require 'domain'
 
       
-  ## TODO pass in map function to inspect
   ## TODO save inspect output to file
   #.inspect()
   # TODO: Make a transform constructor. I.e

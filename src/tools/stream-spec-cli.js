@@ -10,6 +10,8 @@ require('coffee-script/register');
 
 var specifiedFile = process.argv[2];
 
+// TODO: uncache does not really work all that well
+
  
 function runCommandLine(cmd, pipeOutputToConsole, callback) {
   var child = exec(cmd, function (error, outputSuccess, outputError) {
@@ -65,11 +67,8 @@ getHashOfDirectory('.', function() {
     })
   }, intervalTime);
   
-  var runSpecs = function () {
-    console.log('Running...')
-    
-    if (specifiedFile) {
-      var path = process.cwd()+'/'+specifiedFile
+  function runSpec(relativePath) {
+    var path = process.cwd()+'/'+relativePath
       try {
         var spec = require(path)
         if (isFunction(spec.exec))
@@ -78,7 +77,13 @@ getHashOfDirectory('.', function() {
         console.warn("Error:", e.stack)
       }
       uncache(path)
-      
+  }
+  
+  var runSpecs = function () {
+    console.log('Running...')
+    
+    if (specifiedFile) {
+      runSpec(specifiedFile);
       
     } else {
       recursive('./', function (err, files) {
@@ -96,13 +101,7 @@ getHashOfDirectory('.', function() {
           return include;
         })
         
-        cleaned.forEach(function(file) {
-          var path = process.cwd()+'/'+file
-          var spec = require(path)
-          if (isFunction(spec.exec))
-            spec.exec()
-          uncache(path)
-        })
+        cleaned.forEach(runSpec)
         
       });
     }
